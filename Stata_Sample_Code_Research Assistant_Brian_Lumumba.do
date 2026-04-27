@@ -97,7 +97,42 @@ esttab using "$out/Table2_Regressions.rtf", b(2) se(2) r2 label replace
 ********************************************************************************
 * SECTION 4: INDEX DERIVATION
 ********************************************************************************
+********************************************************************************
+**DERIVE PERCEPTION INDEXES
+********************************************************************************
+	**Rename statements
+	forval i = 1/15 {
+		local oldvar q`i'_1
+		local newvar q`i'
+		rename `oldvar' `newvar'
+	}
 
+
+
+
+* Perform factor analysis with varimax rotation and extract 4 components
+	factor q1 q2 q3 q4 q5 q6 q7 q8 q9 q10 q11 q12 q13 q14 q15, factors(4) 
+	
+
+
+	rotate, varimax 
+
+	
+	predict factor1 factor2 factor3 factor4, bartlett
+	
+	
+	* Standardize the factor weights to add to 1
+	egen total_weight = rowtotal(factor1 factor2 factor3 factor4)
+	gen weight_factor1 = factor1 / total_weight
+	gen weight_factor2 = factor2 / total_weight
+	gen weight_factor3 = factor3 / total_weight
+	gen weight_factor4 = factor4 / total_weight
+	
+	**Derive weighted perception index
+	gen weighted_perception_index = q1 * weight_factor2 + q2 * weight_factor2 + q3 * weight_factor2 + q4 * weight_factor2 + ///
+								   q5 * weight_factor1 + q6 * weight_factor3 + q7 * weight_factor3 + q8 * weight_factor4 + ///
+								   q9 * weight_factor4 + q10 * weight_factor1 + q11 * weight_factor1 + q12 * weight_factor1 + ///
+								   q13 * weight_factor1 + q14 * weight_factor4 + q15 * weight_factor3
 ** Standardizing perceptions
 winsor weighted_perception_index, p(.1) gen(w_index_10)
 
