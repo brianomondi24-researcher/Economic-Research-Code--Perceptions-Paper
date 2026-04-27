@@ -18,16 +18,16 @@ version 15
 set more off
 set seed 638254
 
-* 1. SET PATHS
+** 1. Paths
 global root "G:/My Drive/AWARENESS_TYPOLOGIES" //change this to local path
 global data "$root/Data"
 global out  "$root/Output"
 
-* 2. START LOG FILE
+** 2. Setting log
 cap log close
 log using "$out/Analysis_Log_`c(current_date)'.log", replace
 
-* 3. LOAD DATA
+** 3. Data setup
 use "$root/Perceptions.dta", clear
 keep if Q_data == 1  // Focus for the perceptions survey
 
@@ -40,25 +40,25 @@ global demographics Gender Age Education_years Farmer_group Social_group ///
                   Mobile_ownership Land_tenure_ownership no_of_invasions ///
                   Shocks_experienced Tarmac_distance Cost
 
-* T-test for differences by Location
+** T-test for differences by Location
 foreach var of global demographics {
     quietly ttest `var', by(Location)
     di "Variable: `var' | P-value: " r(p)
 }
 
-* Export summary stats (Using asdoc or esttab)
+* Export results
 asdoc sum $demographics, by(Location) dec(2) save($out/Table1_Descriptives.doc) replace
 
 ********************************************************************************
 * SECTION 2: INFORMATION CHANNELS (FIGURE 1 & 2)
 ********************************************************************************
 
-* Cleaning and creating binary dummies in a loop to save space
+** Source channel analysis
 foreach type in Source Channel {
     tab Information_`type', gen(info_`type')
 }
 
-* Visualizing Perception Categories (Consolidated Loop)
+** Classfying perception categories 
 global des_info Desert_Attack_Information Desert_Attack_Rating ///
                 Desert_Attack_Timeliness Desert_Attack_Affordability ///
                 Effects_Information Effects_Rating Effects_Timeliness ///
@@ -79,26 +79,26 @@ restore
 * SECTION 3: PCA AND REGRESSION ANALYSIS
 ********************************************************************************
 
-* Principal Component Analysis
+** Principal component analysis
 global ylist q1_1-q15_1
 factor $ylist, pcf mineigen(1)
 rotate, varimax blanks(0.5)
 predict pc1 pc2 pc3 pc4, bartlett
 
-* Robustness Checks
+** Robustness checks
 eststo clear
 eststo: reg COMP $demographics if Location == 1, robust // Meru
 eststo: reg COMP $demographics if Location == 0, robust // Isiolo
 eststo: reg COMP $demographics, robust                 // Pooled
 
-* Export Regression Results
+** Export results
 esttab using "$out/Table2_Regressions.rtf", b(2) se(2) r2 label replace
 
 ********************************************************************************
 * SECTION 4: INDEX DERIVATION
 ********************************************************************************
 
-* Standardizing perceptions
+** Standardizing perceptions
 winsor weighted_perception_index, p(.1) gen(w_index_10)
 
 gen perc_cat = 0
